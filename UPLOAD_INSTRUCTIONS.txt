@@ -1,0 +1,42 @@
+QUESTFORGE CLEAN REPO UPLOAD INSTRUCTIONS
+
+1. Create the new GitHub repo named:
+   QuestForge
+
+2. Turn README on when creating the repo.
+
+3. Upload these small repository files to the repo:
+   - README.md
+   - .gitignore
+   - .github/workflows/deploy-release.yml
+
+   On mobile GitHub, you may need to create folders by typing the full path:
+   .github/workflows/deploy-release.yml
+
+4. Do NOT upload the large QuestForge_Current_v045_pack_icon_linking_fix.zip to the repository files.
+
+5. Go to:
+   QuestForge repo > Releases > Draft a new release
+
+6. Use:
+   Tag: v045
+   Release title: QuestForge v045
+   Description: Pack icon linking fix. Local bundled inventory icons. Trusted version display.
+
+7. Upload this large file as a Release asset:
+   QuestForge_Current_v045_pack_icon_linking_fix.zip
+
+8. Publish the Release.
+
+9. Go to:
+   QuestForge repo > Settings > Pages
+
+10. Under Build and deployment, choose:
+    Source: GitHub Actions
+
+11. Go to Actions and run:
+    Deploy QuestForge Release Build
+
+12. Open the deployed site. It should show:
+    Build v045 • Assets v1-local-bundled
+

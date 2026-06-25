@@ -1,0 +1,10 @@
+# Keep this repo small. Large builds belong in GitHub Releases.
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+node_modules/
+dist/
+build/
+.DS_Store
