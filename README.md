@@ -1,38 +1,20 @@
-# QuestForge
+# QuestForge Deployment v2
 
-Production deployment repository for QuestForge 5E.
+This repository is intentionally small. Large playable QuestForge builds belong in GitHub Releases, not as normal repository files.
 
-This repository is intentionally small. Large playable game builds and art packs belong in **GitHub Releases**, not as normal repository files.
+## Deployment model
 
-## Current deployment model
+1. Upload a playable ZIP to a GitHub Release.
+2. The ZIP name must start with `QuestForge_Current_v` and end with `.zip`.
+3. Run the `Deploy Latest QuestForge Release` workflow.
+4. GitHub Pages deploys the game from that release ZIP.
 
-- Repository stores workflow/configuration only.
-- GitHub Releases store playable ZIP builds.
-- GitHub Actions deploys the newest `QuestForge_Current_v*.zip` release asset to GitHub Pages.
-
-## Upload rules
-
-Do not commit large ZIP builds directly to the repo.
-
-Upload playable builds to Releases using this naming pattern:
+Example release asset:
 
 ```text
 QuestForge_Current_v045_pack_icon_linking_fix.zip
-QuestForge_Current_v046_some_future_fix.zip
+QuestForge_Current_v046_enemy_art_hotfix.zip
+QuestForge_Current_v047_map_update.zip
 ```
 
-The workflow accepts extra words after the version number as long as the filename starts with:
-
-```text
-QuestForge_Current_v
-```
-
-## Asset packs
-
-Large reusable art packs may also be uploaded as Release assets, for example:
-
-```text
-QuestForge_Inventory_Asset_Pack_v1.zip
-```
-
-Playable builds and asset packs can live in the same Release, but only `QuestForge_Current_v*.zip` is deployed as the playable site.
+The workflow automatically creates/overwrites `version.json` during deployment so the live game has one trusted version source.
