@@ -1,0 +1,50 @@
+name: Deploy Latest QuestForge Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download latest release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          mkdir build
+
+          gh release download \
+            --pattern "QuestForge_Current_v*.zip" \
+            --dir build
+
+          echo "Downloaded:"
+          ls -lh build
+
+      - name: Unzip build
+        run: |
+          mkdir site
+          unzip -q build/*.zip -d site
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
