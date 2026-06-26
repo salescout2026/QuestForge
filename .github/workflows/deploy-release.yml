@@ -52,13 +52,11 @@ jobs:
 
           if [ "$MATCH_COUNT" -eq 0 ]; then
             echo "ERROR: No playable QuestForge ZIP found for release $RELEASE_TAG."
-            echo "Expected one asset like: QuestForge_Current_v056_clean_baseline.zip"
             exit 1
           fi
 
           if [ "$MATCH_COUNT" -gt 1 ]; then
             echo "ERROR: More than one playable QuestForge ZIP found for release $RELEASE_TAG."
-            echo "This would risk mixing builds. Keep exactly one QuestForge_Current_v*.zip per release."
             cat build/matching-assets.txt
             exit 1
           fi
@@ -94,13 +92,13 @@ jobs:
 
           if [ ! -f "site/index.html" ]; then
             echo "ERROR: Deployed ZIP does not contain index.html at the root."
-            echo "The ZIP must open directly into the playable game files."
-            find site -maxdepth 3 -type f | head -50
+            find site -maxdepth 3 -type f | sed -n '1,80p'
             exit 1
           fi
 
-          echo "Site root:"
-          ls -lah site | head -50
+          echo "Confirmed site/index.html exists."
+          echo "Preview of deployed files:"
+          find site -maxdepth 2 -type f | sed -n '1,80p'
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
