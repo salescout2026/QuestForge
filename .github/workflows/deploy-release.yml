@@ -1,7 +1,12 @@
-name: Deploy Latest QuestForge Release
+name: Deploy Exact QuestForge Release
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to deploy, example: v056"
+        required: true
+        default: "v056"
 
 permissions:
   contents: read
@@ -9,40 +14,95 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: questforge-pages
   cancel-in-progress: true
 
 jobs:
   deploy:
+    name: Deploy exact release ZIP
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download latest release asset
+      - name: Resolve exact release asset
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
         run: |
-          set -e
+          set -euo pipefail
 
           mkdir -p build
 
-          gh release download \
+          echo "Deploying release tag: $RELEASE_TAG"
+          echo "Repository: $GITHUB_REPOSITORY"
+
+          gh release view "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern "QuestForge_Current_v*.zip" \
+            --json assets \
+            --jq '.assets[].name' > build/assets.txt
+
+          echo "Release assets:"
+          cat build/assets.txt
+
+          grep -E '^QuestForge_Current_v[0-9]+.*\.zip$' build/assets.txt > build/matching-assets.txt || true
+
+          MATCH_COUNT="$(wc -l < build/matching-assets.txt | tr -d ' ')"
+
+          if [ "$MATCH_COUNT" -eq 0 ]; then
+            echo "ERROR: No playable QuestForge ZIP found for release $RELEASE_TAG."
+            echo "Expected one asset like: QuestForge_Current_v056_clean_baseline.zip"
+            exit 1
+          fi
+
+          if [ "$MATCH_COUNT" -gt 1 ]; then
+            echo "ERROR: More than one playable QuestForge ZIP found for release $RELEASE_TAG."
+            echo "This would risk mixing builds. Keep exactly one QuestForge_Current_v*.zip per release."
+            cat build/matching-assets.txt
+            exit 1
+          fi
+
+          ASSET_NAME="$(cat build/matching-assets.txt)"
+          echo "Selected asset: $ASSET_NAME"
+          echo "ASSET_NAME=$ASSET_NAME" >> "$GITHUB_ENV"
+
+      - name: Download exact release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "$ASSET_NAME" \
             --dir build \
             --clobber
 
           echo "Downloaded:"
           ls -lh build
 
-      - name: Unzip build
+      - name: Unpack build
         run: |
-          mkdir -p site
-          unzip -q build/*.zip -d site
+          set -euo pipefail
 
-      - name: Configure Pages
+          rm -rf site
+          mkdir -p site
+
+          unzip -q "build/$ASSET_NAME" -d site
+
+          if [ ! -f "site/index.html" ]; then
+            echo "ERROR: Deployed ZIP does not contain index.html at the root."
+            echo "The ZIP must open directly into the playable game files."
+            find site -maxdepth 3 -type f | head -50
+            exit 1
+          fi
+
+          echo "Site root:"
+          ls -lah site | head -50
+
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
@@ -50,6 +110,12 @@ jobs:
         with:
           path: site
 
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Deployment summary
+        run: |
+          echo "Deployed release: ${{ github.event.inputs.release_tag }}"
+          echo "Deployed asset: $ASSET_NAME"
+          echo "URL: ${{ steps.deployment.outputs.page_url }}"
